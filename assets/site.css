@@ -1,0 +1,334 @@
+/* Swoop Nebula portfolio
+   Rebuilt to match the live Squarespace pages: black, a fixed left rail with
+   the polaroid, the name, the Work with me button and the project list, and
+   the work filling everything to the right of it. */
+
+:root {
+  --bg: #0b0b0b;
+  --fg: #ffffff;
+  --muted: #9b9b9b;
+  --line: #1f1f1f;
+  --blue: #1a7bf5;
+  --rail: 262px;
+  --gut: clamp(18px, 3.2vw, 52px);
+  --colgap: clamp(20px, 4vw, 64px);
+  --ease: cubic-bezier(.22, .61, .36, 1);
+}
+
+* { box-sizing: border-box; }
+
+/* A scrollbar that reads as part of the page rather than the operating
+   system: thin, nearly black, no track. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #262626 transparent;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #242424; border-radius: 99px;
+  border: 3px solid transparent; background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: #343434; background-clip: content-box; }
+html { -webkit-text-size-adjust: 100%; background: var(--bg); }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 400 16px/1.6 "Helvetica Neue", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+img, video { display: block; max-width: 100%; height: auto; }
+
+body.is-smooth #scroll {
+  position: fixed; top: 0; left: 0; width: 100%; will-change: transform;
+}
+
+/* masthead --------------------------------------------------------------- */
+.mast {
+  display: flex; align-items: center; gap: 20px;
+  padding: 18px var(--gut); border-bottom: 1px solid var(--line);
+}
+.mast .brand { display: flex; align-items: center; gap: 11px; }
+.mast .brand .mark {
+  width: 19px; height: 30px; flex: 0 0 auto;
+  background: currentColor;
+  -webkit-mask: var(--figure) center/contain no-repeat;
+          mask: var(--figure) center/contain no-repeat;
+}
+.mast .brand span {
+  font-weight: 700; letter-spacing: .07em; font-size: 15px; text-transform: uppercase;
+}
+.mast .links { margin-left: auto; display: flex; align-items: center; gap: 20px; }
+.mast .links a { font-size: 15px; color: var(--fg); opacity: .9; }
+.mast .links a:hover { opacity: 1; }
+.mast .links svg { width: 21px; height: 21px; display: block; fill: currentColor; }
+
+/* the two column frame ---------------------------------------------------- */
+.frame {
+  display: grid; grid-template-columns: var(--rail) minmax(0, 1fr);
+  gap: var(--colgap);
+  padding: clamp(26px, 5vh, 58px) var(--gut) 90px;
+  align-items: start;
+}
+/* Pinned: see the note in site.js. Sticky is the fallback when the eased
+   scroller is off, which is touch and reduced motion. */
+.rail { position: sticky; top: 26px; z-index: 4; will-change: transform; }
+body.is-smooth .rail { position: static; }
+/* Pinned, the rail can outgrow a short window, and then its last links would
+   be unreachable. Let it scroll on its own instead, quietly. */
+body.rail-pinned .rail {
+  max-height: calc(100vh - 120px); overflow-y: auto;
+  scrollbar-width: none;
+  overscroll-behavior: contain;   /* its own scroll stops at its own ends */
+}
+body.rail-pinned .rail::-webkit-scrollbar { width: 0; height: 0; }
+.mast { position: relative; z-index: 9; background: var(--bg); will-change: transform; }
+/* The source image is already a polaroid on a mint ground, so no frame is
+   drawn around it; doing so would give it two. */
+.polaroid {
+  display: block; width: 150px; margin-bottom: 24px;
+  transition: transform 300ms var(--ease);
+}
+.polaroid:hover { transform: translateY(-2px) rotate(-1deg); }
+.polaroid img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+.rail h1 {
+  margin: 0 0 22px; font-size: 25px; line-height: 1.15;
+  letter-spacing: -.02em; font-weight: 700;
+}
+/* Work with me, as a tag on the edge of the window. It sits outside the
+   wrapper the scroller moves, because position: fixed inside a transformed
+   ancestor is positioned against that ancestor rather than the viewport. */
+.tag {
+  /* Hangs off the gutter rule on the rail side: its right edge meets the
+     rule, so it grows left out of the line. */
+  position: fixed; left: calc(var(--gut) + var(--rail) + (var(--colgap) / 2));
+  top: 50%; z-index: 40;
+  transform: translate(-100%, -50%);
+  writing-mode: vertical-rl;
+  /* Sits inside the edge, in the page's own black with the same faint rule
+     the boxes use, so it reads as part of the furniture rather than a sticker
+     stuck on top of it. */
+  background: var(--bg);
+  /* The same tone the project list renders at: white at 78% over the page
+     black. Matched as a flat value because opacity here would dim the
+     border with it. */
+  color: #c9c9c9;
+  border: 1px solid var(--line); border-right: 0;
+  border-radius: 12px 0 0 12px;
+  font-weight: 700; font-size: 13.5px; letter-spacing: .02em;
+  padding: 18px 10px;
+  transition: color 220ms var(--ease);
+}
+.tag:hover { color: var(--fg); }
+
+/* No rule to hang from once the rail stacks, so it returns to the edge. */
+@media (max-width: 760px) {
+  .tag {
+    left: auto; right: 0; transform: translateY(-50%);
+    border-left: 1px solid var(--line); border-right: 0;
+    border-radius: 12px 0 0 12px;
+  }
+  .tag:hover { transform: translateY(-50%) translateX(-2px); }
+}
+.tag:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+/* The pill is the phone's version of the edge tag: there, a fixed tag sits
+   on top of the work, and there is no rule for it to hang from anyway. */
+.cta { display: none; }
+
+.railnav { margin: 0; display: grid; gap: 0; }
+.railnav a {
+  font-size: 16px; line-height: 1.8; color: var(--fg); opacity: .78;
+  transition: opacity 200ms ease, transform 260ms var(--ease);
+}
+.railnav a:hover { opacity: 1; transform: translateX(3px); }
+.railnav a[aria-current] { opacity: 1; font-weight: 700; }
+
+/* A rule down the gutter, the vertical answer to the one under the masthead.
+   Fixed rather than a border, so it runs the height of the window whatever
+   the rail and the work happen to be doing. The masthead is opaque and sits
+   above it, so it starts cleanly below the bar. */
+@media (min-width: 761px) {
+  /* The rule lives OUTSIDE the wrapper the scroller transforms. A fixed
+     element inside a transformed ancestor is positioned against that
+     ancestor, not the viewport, which put the rule's gap half a page away
+     from the tab it was meant to make room for. */
+  .gutter {
+    position: fixed; top: 0; bottom: 0; width: 1px;
+    left: calc(var(--gut) + var(--rail) + (var(--colgap) / 2));
+    background: var(--line); z-index: 3; pointer-events: none;
+  }
+}
+
+/* Where the masthead rule meets the gutter rule, a crosshair. The halo is the
+   page colour, so the two dim rules stop short of it and the brighter mark
+   carries the crossing itself. */
+@media (min-width: 761px) {
+  .mast::after {
+    content: ""; position: absolute; z-index: 11; pointer-events: none;
+    width: 17px; height: 17px; bottom: -8.5px;
+    left: calc(var(--gut) + var(--rail) + (var(--colgap) / 2) - 8.5px);
+    background-color: var(--bg); border-radius: 50%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 17'%3E%3Cpath d='M8.5 1.5v14M1.5 8.5h14' stroke='%23707070' stroke-width='1'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: center; background-size: 17px 17px;
+  }
+
+  /* and the same mark closing the rule at the foot of the window */
+  .gutter::after {
+    content: ""; position: fixed; z-index: 11; pointer-events: none;
+    width: 17px; height: 17px; bottom: 0;
+    left: calc(var(--gut) + var(--rail) + (var(--colgap) / 2) - 8.5px);
+    background-color: var(--bg); border-radius: 50%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 17 17'%3E%3Cpath d='M8.5 1.5v14M1.5 8.5h14' stroke='%23707070' stroke-width='1'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: center; background-size: 17px 17px;
+  }
+}
+
+/* the index collage ------------------------------------------------------- */
+/* A grid, not CSS columns. Columns flow items DOWN the first column before
+   starting the second, so the top row read 1, 7, 12 instead of 1, 2, 3 and
+   the work came out in the wrong order. Grid reads left to right, and
+   align-items: start lets each piece keep its own height. */
+.collage {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(26px, 3vw, 54px) clamp(18px, 2.4vw, 40px);
+  align-items: start;
+}
+/* Three across is the most it ever shows: past that the work gets small
+   before the window runs out. Then two, then one. */
+@media (max-width: 1240px) { .collage { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 680px)  { .collage { grid-template-columns: 1fr; } }
+.collage a {
+  display: block; position: relative;
+  /* The live site scales the whole card, caption and all, over half a
+     second. That is why the title appears to grow with the artwork. */
+  transition: transform 500ms var(--ease);
+  transform-origin: center;
+}
+.collage a:hover { transform: scale(1.08); z-index: 2; }
+/* The growth has to fit in the gap beside it. Three across has room for a
+   tenth; two across does not, and one across would simply run off the
+   screen, so it steps down and then off. */
+@media (max-width: 1240px) { .collage a:hover { transform: scale(1.04); } }
+@media (max-width: 760px)  { .collage a:hover { transform: none; } }
+/* A touch screen has no pointer to hover with, so there is nothing to show. */
+@media (hover: none) { .collage a:hover { transform: none; } }
+.collage img { width: 100%; transition: opacity 600ms ease; }
+
+.collage .cap {
+  display: block; margin-top: 11px;
+  font-size: 12.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: #fff;
+  /* Held back until the card is hovered. Opacity rather than display, so
+     the row keeps its height and nothing shifts as you move across. */
+  opacity: 0; transition: opacity 280ms var(--ease);
+}
+.collage a:hover .cap, .collage a:focus-visible .cap { opacity: 1; }
+/* A touch screen has no hover, so there the titles simply show. */
+@media (hover: none) {
+  .collage .cap { opacity: .82; }
+}
+
+/* a project --------------------------------------------------------------- */
+.work h2 {
+  margin: 0 0 26px; font-size: clamp(34px, 5.4vw, 70px); line-height: 1.02;
+  letter-spacing: -.035em; font-weight: 700; text-wrap: balance;
+}
+.copy {
+  /* Always two, as on the live pages. The shorthand with a column-width
+     collapses to one column when the measure is tight, which is not wanted
+     here. */
+  column-count: 2; column-gap: 44px;
+  margin: clamp(22px, 3.4vw, 40px) 0; max-width: 1180px;
+}
+/* No break-inside: avoid. That was the bug: it stops a paragraph splitting
+   across the two columns, so a single one sat in the first and left the
+   second empty. The live pages let the text flow across. */
+.copy p { margin: 0 0 1.15em; font-size: 16.5px; line-height: 1.62; }
+.copy p:last-child { margin-bottom: 0; }
+
+/* Every piece sits in a box of its own: two squares across, or one box
+   spanning the full width when the piece is landscape. The box is the fixed
+   thing, the artwork is contained inside it, so nothing is ever cropped and
+   every row lines up. The boxes used to be bare images at their natural
+   height, which is what was cutting work off and making the rhythm uneven. */
+.plates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(14px, 2vw, 28px);
+  /* One spacing value above and below every image section, so text never
+     butts up against a box. */
+  margin: clamp(22px, 3.4vw, 40px) 0;
+}
+.plate {
+  /* No fixed ratio on the box. aspect-ratio applies to the border box, so
+     the padding skews the content box's shape and the artwork ends up
+     letterboxed inside it. Letting the artwork set the width and the box
+     take its height is what makes it flush on every side. */
+  margin: 0;
+  padding: clamp(10px, 1.1vw, 18px);
+  border: 1px solid #2b2b2b; border-radius: 14px;
+  overflow: hidden; line-height: 0;
+}
+/* A landscape piece spans both columns. */
+.plate.is-wide { grid-column: 1 / -1; }
+/* And a section holding a single piece gives it the whole width, whatever
+   its shape: half a row of artwork with half a row of nothing beside it was
+   the thing that looked broken. */
+.plates.is-single { grid-template-columns: 1fr; }
+.plate img, .plate video {
+  width: 100%; height: auto; max-width: 100%;
+  /* A grid item defaults to min-width/min-height auto, which lets the
+     intrinsic size of the artwork win over max-width and push past the box.
+     Zeroing both is what actually makes it fit. */
+  min-width: 0; min-height: 0;
+  object-fit: contain; border-radius: 3px; background: none;
+}
+@media (max-width: 700px) {
+  .plates { grid-template-columns: 1fr; }
+
+}
+
+.pager {
+  display: flex; gap: 20px; align-items: baseline;
+  border-top: 1px solid var(--line); margin-top: 58px; padding-top: 24px;
+  font-size: 15px; color: var(--muted);
+}
+.pager .next { margin-left: auto; text-align: right; }
+.pager .next b { display: block; color: var(--fg); font-weight: 700; margin-top: 4px; }
+.pager a:hover { color: var(--fg); }
+
+/* motion ------------------------------------------------------------------ */
+.rise { opacity: 0; transform: translate3d(0, 24px, 0);
+  transition: opacity 720ms var(--ease), transform 720ms var(--ease); }
+.rise.in { opacity: 1; transform: none; }
+img.lazy { opacity: 0; transition: opacity 500ms ease; }
+img.lazy.ready { opacity: 1; }
+
+/* A narrower rail before giving up on the sidebar entirely, so the layout
+   holds its shape further down. */
+@media (max-width: 1100px) { :root { --rail: 226px; } .rail h1 { font-size: 23px; } }
+
+@media (max-width: 760px) {
+  .copy { column-count: 1; }
+  .frame { grid-template-columns: 1fr; gap: 30px; }
+  .rail { position: static; max-height: none; }
+  .polaroid { width: 118px; }
+  /* On a phone the thumbnails ARE the navigation, so the list is redundant
+     and would push the work below two screenfuls of names. */
+  .railnav { display: none; }
+  .tag { display: none; }
+  .cta {
+    display: inline-block; margin: 0 0 4px;
+    background: var(--blue); color: #fff; font-weight: 700; font-size: 15px;
+    padding: 11px 22px; border-radius: 999px;
+  }
+  /* The tiles carry their own edge here, with no rule or rail to hold them. */
+  .collage img { border: 1px solid #2b2b2b; border-radius: 14px; }
+  .collage .cap { margin-top: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise, img.lazy { opacity: 1; transform: none; transition: none; }
+  .collage a:hover { transform: none; }
+  .collage .cap { opacity: .82; }
+  }

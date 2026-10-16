@@ -1,0 +1,14 @@
+{
+  "name": "swoopnebula-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Static portfolio site for Swoop Nebula. The published site needs no build; build.mjs regenerates the HTML from data-live.json and data-blocks.json.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "python3 -m http.server 7490"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5"
+  }
+}
