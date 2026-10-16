@@ -319,6 +319,11 @@
         // Paint the new content in place before fading it up, or the first
         // frame shows it at the old scroll position.
         requestAnimationFrame(function () {
+          // Aim again now the new content has been laid out. The first shot
+          // is taken while the document is still the length of the old page,
+          // so the browser clamps it and the work lands low. Correcting here
+          // is invisible: nothing has been faded back in yet.
+          if (!main.classList.contains("nudge")) settle();
           requestAnimationFrame(function () {
             document.body.classList.remove("swapping");
             busy = false;
