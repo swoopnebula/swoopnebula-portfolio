@@ -313,26 +313,6 @@
       }
     }
 
-    /* One shot at the position is not enough on a real device. The safety
-       timeout that un-fades the page can fire before the phone has finished
-       laying the new content out, and the work then lands short, with the
-       list still showing above it. Keep correcting for a moment, and stop
-       the instant the reader scrolls themselves: nothing is worse than a
-       page that fights your thumb. */
-    function keepAiming() {
-      var mine = Math.round(pageYOffset), tries = 0;
-      (function again() {
-        if (++tries > 12) return;                       // about 700ms
-        if (Math.abs(Math.round(pageYOffset) - mine) > 4) return;  // they moved it
-        var y = workTop();
-        if (y > 40 && Math.abs(y - pageYOffset) > 2) {
-          scrollTo(0, y);
-          mine = Math.round(pageYOffset);
-        }
-        setTimeout(again, 60);
-      })();
-    }
-
     function markCurrent(url) {
       var path = new URL(url, location.href).pathname;
       [].forEach.call(document.querySelectorAll(".railnav a"), function (a) {
@@ -371,16 +351,23 @@
         if (!fresh) throw new Error("no main");
 
         main.innerHTML = fresh.innerHTML;
+        // Force the layout now, while the page is still faded out. Every
+        // image carries width and height, so one read is enough to make the
+        // geometry final, and everything below can measure it once and trust
+        // it. Correcting the position repeatedly afterwards was the cause of
+        // the hopping: in a browser that paints, every correction is seen.
+        void main.offsetHeight;
         document.title = doc.title;
         if (push) history.pushState({ soft: 1 }, "", clean(url));
         markCurrent(url);
-        // Move first, then bind. The reveal observer judges what is on
-        // screen the moment it starts watching, so binding while the page
-        // is still at the old scroll position tells it the new title is far
-        // below the fold and it stays hidden. You then land on what looks
-        // like blank space and the title fades in afterwards, a beat late.
+        // Order matters, and all of it happens while the page is invisible.
+        // Move first: the reveal observer judges what is on screen the moment
+        // it starts watching, so binding at the old position would leave the
+        // new title hidden. Then bind, then focus, which must come last
+        // because it is the only step that could itself move the page.
         settle();
         bindContent(main);
+        announce();
 
         // Paint the new content in place before fading it up, or the first
         // frame shows it at the old scroll position. Two frames is the
@@ -398,10 +385,7 @@
           // is taken while the document is still the length of the old page,
           // so the browser clamps it and the work lands low. Correcting here
           // is invisible: nothing has been faded back in yet.
-          settle();
           document.body.classList.remove("swapping");
-          announce();
-          keepAiming();
           busy = false;
           if (queued) {
             var next = queued; queued = null;
