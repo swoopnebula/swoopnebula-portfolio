@@ -360,12 +360,9 @@
         document.title = doc.title;
         if (push) history.pushState({ soft: 1 }, "", clean(url));
         markCurrent(url);
-        // Order matters, and all of it happens while the page is invisible.
-        // Move first: the reveal observer judges what is on screen the moment
-        // it starts watching, so binding at the old position would leave the
-        // new title hidden. Then bind, then focus, which must come last
-        // because it is the only step that could itself move the page.
-        settle();
+        // No scrolling here. The page was already put in position the moment
+        // the link was tapped; the content underneath has changed, but the
+        // title has not moved, so there is nothing left to correct.
         bindContent(main);
         announce();
 
@@ -424,6 +421,14 @@
       if (!/\/$|\/index\.html$/.test(url.pathname)) return;   // only our pages
 
       ev.preventDefault();
+      // Go to the title now, before anything is fetched. Every page carries
+      // the same masthead, portrait, name, button and list above the work,
+      // so the title sits at the same place in the document on all of them.
+      // The target is therefore a constant, measurable from the page already
+      // on screen, whose layout settled long ago. Scrolling here means the
+      // move happens once, immediately, against known geometry, and the
+      // content that arrives later slots in underneath without shifting it.
+      settle();
       // Tapped while a swap is still in flight. Returning here without
       // preventDefault let the browser follow the link instead, so an
       // impatient second tap reloaded the whole page and threw away the
