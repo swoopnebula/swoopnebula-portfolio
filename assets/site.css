@@ -390,5 +390,9 @@ main.nudge { animation: sn-nudge 440ms var(--ease); }
    it, so it must never draw a focus ring. Both states are suppressed: Safari
    paints one on a programmatic focus even when :focus-visible does not match,
    which put a blue box around the title on a phone. */
+/* The contact sheet has no heading inside #work, so focus lands on the
+   grid itself and drew a box around the whole thing. Both targets. */
 #work h2[tabindex="-1"]:focus,
-#work h2[tabindex="-1"]:focus-visible { outline: none; box-shadow: none; }
+#work h2[tabindex="-1"]:focus-visible,
+#work[tabindex="-1"]:focus,
+#work[tabindex="-1"]:focus-visible { outline: none; box-shadow: none; }

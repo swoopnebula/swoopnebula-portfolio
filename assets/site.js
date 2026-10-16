@@ -262,9 +262,29 @@
 
     function clean(href) { return href.replace(/#work$/, ""); }
 
+    /* How much of the top of the window is covered by something that does
+       not scroll away. The masthead is held in place by the scroller, which
+       runs for a mouse or trackpad but not for touch, so on a narrow desktop
+       window it sits over the top of the page and on a phone it does not.
+       Without allowing for it, scrolling the title to the top edge puts it
+       behind the masthead and you arrive at the bottom of the title or the
+       first line of the paragraph. Measured rather than assumed, so it stays
+       right if the masthead ever changes height. */
+    function topInset() {
+      // `active` lists what is marked for pinning; the scroller is what
+      // actually holds it there, and it only runs for a mouse or trackpad.
+      // Both conditions, or a phone loses 61px for a masthead that is not
+      // covering anything.
+      if (!smooth) return 0;
+      var m = document.querySelector(".mast");
+      if (!m || active.indexOf(m) === -1) return 0;
+      return Math.round(m.getBoundingClientRect().height);
+    }
+
     function workTop() {
       var w = document.getElementById("work");
-      return w ? Math.round(w.getBoundingClientRect().top + pageYOffset - 14) : 0;
+      if (!w) return 0;
+      return Math.round(w.getBoundingClientRect().top + pageYOffset - 14 - topInset());
     }
 
     /* Put the work under the top edge. When it is already there, nothing
@@ -350,6 +370,13 @@
         var fresh = doc.querySelector("main");
         if (!fresh) throw new Error("no main");
 
+        // The address has to change first. An img src is resolved the moment
+        // it is parsed, against whatever the document URL is at that instant,
+        // so inserting the markup before updating the address resolves every
+        // relative path against the page being left. Returning to the contact
+        // sheet from a project looked for its covers inside the project
+        // folder and they came back broken.
+        if (push) history.pushState({ soft: 1 }, "", clean(url));
         main.innerHTML = fresh.innerHTML;
         // Force the layout now, while the page is still faded out. Every
         // image carries width and height, so one read is enough to make the
@@ -358,7 +385,6 @@
         // the hopping: in a browser that paints, every correction is seen.
         void main.offsetHeight;
         document.title = doc.title;
-        if (push) history.pushState({ soft: 1 }, "", clean(url));
         markCurrent(url);
         // No scrolling here. The page was already put in position the moment
         // the link was tapped; the content underneath has changed, but the
