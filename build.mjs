@@ -62,7 +62,7 @@ ${noindex ? '<meta name="robots" content="noindex">' : `<link rel="canonical" hr
 <div id="scroll">
 
   <header class="mast" data-pin>
-    <a class="brand" href="https://thevisualpharmacy.com"><span>The Visual Pharmacy</span></a>
+    <a class="brand" href="${up || "./"}"><span>Swoop Nebula</span></a>
     <nav class="links">
       <a href="https://thevisualpharmacy.com">Shop</a>
       <a href="https://www.instagram.com/swoopnebula/" aria-label="Instagram">${SOCIAL.instagram}</a>
