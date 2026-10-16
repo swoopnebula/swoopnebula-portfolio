@@ -229,9 +229,7 @@ body.rail-pinned .rail::-webkit-scrollbar { width: 0; height: 0; }
 }
 .collage a:hover .cap, .collage a:focus-visible .cap { opacity: 1; }
 /* A touch screen has no hover, so there the titles simply show. */
-@media (hover: none) {
-  .collage .cap { opacity: .82; }
-}
+@media (hover: none) { .collage .cap { opacity: .82; } }
 
 /* a project --------------------------------------------------------------- */
 .work h2 {
@@ -353,7 +351,17 @@ body.rail-pinned .rail::-webkit-scrollbar { width: 0; height: 0; }
   }
   /* The tiles carry their own edge here, with no rule or rail to hold them. */
   .collage img { border: 1px solid #2b2b2b; border-radius: 14px; }
-  .collage .cap { margin-top: 9px; }
+  /* Titles are always on here, not held back for a hover: this is the phone
+     layout whether or not the pointer can hover, and it should look the same
+     in a narrow window as it does on a phone. Because they are always there
+     they take part in the layout, and a title running to two lines would make
+     its grid row taller and push the next row down. Every caption reserves
+     the same two lines, so the rows keep an even pitch. */
+  .collage .cap {
+    margin-top: 9px; opacity: .82;
+    line-height: 1.25; min-height: 2.5em;
+  }
+  .collage a:hover .cap { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .rise, img.lazy { opacity: 1; transform: none; transition: none; }
