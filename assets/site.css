@@ -63,6 +63,9 @@ body.is-smooth #scroll {
 .mast .links a { font-size: 15px; color: var(--fg); opacity: .9; }
 .mast .links a:hover { opacity: 1; }
 .mast .links svg { width: 21px; height: 21px; display: block; fill: currentColor; }
+/* Outline icons carry their own fill="none"; this keeps the stylesheet
+   from flooding them solid. */
+.mast .links svg[fill="none"] { fill: none; }
 
 /* the two column frame ---------------------------------------------------- */
 .frame {
@@ -314,9 +317,16 @@ img.lazy.ready { opacity: 1; }
   .frame { grid-template-columns: 1fr; gap: 30px; }
   .rail { position: static; max-height: none; }
   .polaroid { width: 118px; }
-  /* On a phone the thumbnails ARE the navigation, so the list is redundant
-     and would push the work below two screenfuls of names. */
-  .railnav { display: none; }
+  /* The list earns its place on a phone too: it names every project in one
+     glance, which the thumbnails cannot. Two columns so twelve names cost
+     half a screen rather than a whole one. */
+  .railnav {
+    display: grid; grid-template-columns: 1fr 1fr;
+    column-gap: 18px; margin-top: 4px;
+    border-top: 1px solid var(--line); padding-top: 14px;
+  }
+  .railnav a { font-size: 15px; line-height: 2; }
+  .railnav a:hover { transform: none; }
   .tag { display: none; }
   .cta {
     display: inline-block; margin: 0 0 4px;
