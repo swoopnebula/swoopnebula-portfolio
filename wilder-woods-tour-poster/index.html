@@ -20,7 +20,12 @@
 <link rel="icon" href="../favicon.ico?v=13e24d43" sizes="any">
 <link rel="icon" href="../assets/favicon-32.png?v=13e24d43" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png?v=13e24d43">
-<link rel="stylesheet" href="../assets/site.css?v=7877ac87">
+<link rel="stylesheet" href="../assets/site.css?v=bb5046eb">
+<!-- Everything that animates in starts hidden, and only script reveals it.
+     Without this flag a script that never runs, for any reason at all,
+     leaves the page blank. Inline and before the body so it applies on the
+     first paint and there is no flash. -->
+<script>document.documentElement.className += " js";</script>
 </head>
 <body>
 <div id="scroll">
@@ -66,7 +71,7 @@
       </div>
       <div class="plates is-single">
         <figure class="plate rise" style="--ar: 1"><img class="lazy" src="../images/wilder-woods-tour-poster/564.webp"
-          alt="Wilder Woods" loading="lazy" decoding="async"></figure>
+          alt="Wilder Woods" width="1800" height="1800" loading="lazy" decoding="async"></figure>
       </div>
       <nav class="pager">
         <a href="../">All work</a>
@@ -77,6 +82,6 @@
 </div>
 <div class="gutter" aria-hidden="true"></div>
 <a class="tag" href="https://swoop.thevisualpharmacy.com/">Work with me</a>
-<script src="../assets/site.js?v=5618a7ef"></script>
+<script src="../assets/site.js?v=d4dd3451"></script>
 </body>
 </html>

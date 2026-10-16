@@ -302,11 +302,14 @@ body.rail-pinned .rail::-webkit-scrollbar { width: 0; height: 0; }
 .pager a:hover { color: var(--fg); }
 
 /* motion ------------------------------------------------------------------ */
-.rise { opacity: 0; transform: translate3d(0, 24px, 0);
+/* Scoped to .js, which an inline script in the head sets. If the script
+   never runs, these rules never apply and the page is simply visible:
+   plain, unanimated and complete, rather than a blank screen. */
+.js .rise { opacity: 0; transform: translate3d(0, 24px, 0);
   transition: opacity 720ms var(--ease), transform 720ms var(--ease); }
-.rise.in { opacity: 1; transform: none; }
-img.lazy { opacity: 0; transition: opacity 500ms ease; }
-img.lazy.ready { opacity: 1; }
+.js .rise.in { opacity: 1; transform: none; }
+.js img.lazy { opacity: 0; transition: opacity 500ms ease; }
+.js img.lazy.ready { opacity: 1; }
 
 /* A narrower rail before giving up on the sidebar entirely, so the layout
    holds its shape further down. */
@@ -381,3 +384,8 @@ main.nudge { animation: sn-nudge 440ms var(--ease); }
   main { transition: none; }
   main.nudge { animation: none; }
 }
+
+/* The swapped-in heading takes focus so the keyboard and screen reader carry
+   on from the content. It is not a tab stop, so it should not show a ring. */
+#work h2[tabindex="-1"]:focus { outline: none; }
+#work h2[tabindex="-1"]:focus-visible { outline: 2px solid var(--blue); outline-offset: 6px; }

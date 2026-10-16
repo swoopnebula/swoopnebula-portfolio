@@ -3,3 +3,8 @@
 .Spotlight-V100
 .Trashes
 node_modules
+_backups/
+
+# Internal engineering notes. They record drive paths, operational quirks and
+# a candid bug history, none of which belongs on a public portfolio.
+documentation/

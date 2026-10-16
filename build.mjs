@@ -57,6 +57,11 @@ ${noindex ? '<meta name="robots" content="noindex">' : `<link rel="canonical" hr
 <link rel="icon" href="${up}assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="apple-touch-icon" href="${up}assets/apple-touch-icon.png">
 <link rel="stylesheet" href="${up}assets/site.css?v=${VER}">
+<!-- Everything that animates in starts hidden, and only script reveals it.
+     Without this flag a script that never runs, for any reason at all,
+     leaves the page blank. Inline and before the body so it applies on the
+     first paint and there is no flash. -->
+<script>document.documentElement.className += " js";</script>
 </head>
 <body>
 <div id="scroll">
@@ -96,8 +101,19 @@ ${main}
 }
 
 // index --------------------------------------------------------------------
+// The covers are measured too, for the same reason the plates are: a tile with
+// no intrinsic size is zero high until it decodes, and twelve of them collapse
+// the grid on first paint.
+const coverSize = {};
+for (const s of ORDER) {
+  const f = path.join(IMG, "_covers", s + ".webp");
+  if (existsSync(f)) {
+    const m = await sharp(f).metadata();
+    coverSize[s] = ` width="${m.width}" height="${m.height}"`;
+  } else coverSize[s] = "";
+}
 const tiles = ORDER.map((s, i) => `      <a class="rise" href="${s}/">
-        <img class="lazy" src="images/_covers/${s}.webp" alt="${esc(live[s].title)}"
+        <img class="lazy" src="images/_covers/${s}.webp" alt="${esc(live[s].title)}"${coverSize[s]}
           loading="${i < 6 ? "eager" : "lazy"}" decoding="async">
         <span class="cap">${esc(live[s].label)}</span>
       </a>`).join("\n");
@@ -138,19 +154,25 @@ for (let i = 0; i < ORDER.length; i++) {
       const probe = b.kind === "video"
         ? path.join(IMG, slug, base0 + ".poster.webp")
         : path.join(IMG, slug, b.out);
-      let wide = "", ar = "";
+      let wide = "", ar = "", dim = "";
       if (existsSync(probe)) {
         const m = await sharp(probe).metadata();
         const r = m.width / m.height;
         if (r > 1.45) wide = " is-wide";
         ar = ' style="--ar: ' + (Math.round(r * 1000) / 1000) + '"';
+        // Written onto the element, not just into --ar. Without width and
+        // height the box is zero high until the file decodes, so the page
+        // grows under the reader and anything that measured a position,
+        // the anchor and the swap both, lands somewhere else. The numbers
+        // were already being measured here; they were simply never used.
+        dim = ' width="' + m.width + '" height="' + m.height + '"';
       }
 
       if (b.kind === "video") {
         const base = b.out.replace(/\.mp4$/, "");
         const poster = existsSync(path.join(IMG, slug, base + ".poster.webp"))
           ? ' poster="../images/' + slug + "/" + base + '.poster.webp"' : "";
-        return '        <figure class="plate rise' + wide + '"' + ar + '><video data-inview muted loop playsinline preload="none"' +
+        return '        <figure class="plate rise' + wide + '"' + ar + '><video data-inview muted loop playsinline preload="none"' + dim +
           poster + '>\n          <source src="../images/' + slug + "/" + b.out +
           '" type="video/mp4"></video></figure>';
       }
@@ -159,7 +181,7 @@ for (let i = 0; i < ORDER.length; i++) {
       // that is what drifted last time.
       return '        <figure class="plate rise' + wide + '"' + ar + '><img class="lazy" src="../images/' +
         slug + "/" + b.out + '"\n          alt="' + esc(p.title) +
-        '" loading="lazy" decoding="async"></figure>';
+        '"' + dim + ' loading="lazy" decoding="async"></figure>';
     }))).join("\n");
     // A run of one gets the whole width; two or more sit two across.
     const only = run.items.length === 1 ? " is-single" : "";

@@ -40,7 +40,7 @@ not share and the push is rejected.
 **2. Push this folder.** From the project folder:
 
 ```bash
-cd /Volumes/HUBBLE/Projects/swoopnebula-portfolio
+cd path/to/swoopnebula-portfolio
 git remote add origin https://github.com/<your-username>/swoopnebula-portfolio.git
 git push -u origin main
 ```

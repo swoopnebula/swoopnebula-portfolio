@@ -246,7 +246,7 @@
     var main = document.querySelector("main");
     if (!main || !window.fetch || !window.DOMParser || !history.pushState) return;
     if (location.protocol === "file:") return;   // fetch cannot read the disk
-    var busy = false;
+    var busy = false, queued = null;
 
     /* The rail and the masthead are never swapped, so their links keep
        resolving against whatever the address bar says. Once a swap changes
@@ -276,9 +276,41 @@
         main.classList.remove("nudge");
         void main.offsetWidth;                   // restart the animation
         main.classList.add("nudge");
+        // Taken off again when it ends, or the class sticks and every later
+        // nudge is a no-op because the animation is already applied.
+        setTimeout(function () { main.classList.remove("nudge"); }, 500);
         return;
       }
       scrollTo(0, Math.max(0, y));
+    }
+
+    /* A real page load moves focus to the top of the new document and tells a
+       screen reader what arrived. Replacing <main> does neither: focus stays
+       on a link that no longer exists, and nothing is announced, so a reader
+       is told only that a link was activated and then left in silence.
+       Both are put back by hand. */
+    var crier = null;
+    function announce() {
+      if (!crier) {
+        crier = document.createElement("p");
+        crier.setAttribute("aria-live", "polite");
+        crier.setAttribute("role", "status");
+        // Available to assistive technology, never drawn.
+        crier.style.cssText = "position:absolute;width:1px;height:1px;margin:-1px;" +
+          "padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0";
+        document.body.appendChild(crier);
+      }
+      crier.textContent = document.title.replace(/\s*\u2014\s*Swoop Nebula$/, "") + " loaded";
+
+      // Focus the new heading so the keyboard and the reader both continue
+      // from the content rather than from wherever the old link used to be.
+      // tabindex -1 makes it focusable without putting it in the tab order,
+      // and preventScroll keeps the position we just settled on.
+      var h = document.querySelector("#work h2") || document.getElementById("work");
+      if (h) {
+        h.setAttribute("tabindex", "-1");
+        try { h.focus({ preventScroll: true }); } catch (e) { h.focus(); }
+      }
     }
 
     function markCurrent(url) {
@@ -300,8 +332,17 @@
       // The fade and the fetch run together, so the wait is spent rather
       // than added. 220ms matches the CSS, and the whole thing waits for
       // whichever finishes last.
-      var got = fetch(url, { credentials: "same-origin" })
-        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); });
+      // A request that never answers would hold the page faded out with no
+      // way back, so it is given a deadline and then handed to the browser,
+      // which has its own error page and its own retry.
+      var stop = window.AbortController ? new AbortController() : null;
+      var giveUp = setTimeout(function () { stop && stop.abort(); }, 8000);
+      var got = fetch(url, { credentials: "same-origin", signal: stop && stop.signal })
+        .then(function (r) {
+          clearTimeout(giveUp);
+          if (!r.ok) throw new Error(r.status);
+          return r.text();
+        });
       var faded = new Promise(function (go) { setTimeout(go, 220); });
 
       Promise.all([got, faded]).then(function (out) {
@@ -322,25 +363,42 @@
         bindContent(main);
 
         // Paint the new content in place before fading it up, or the first
-        // frame shows it at the old scroll position.
-        requestAnimationFrame(function () {
+        // frame shows it at the old scroll position. Two frames is the
+        // preferred path, but it cannot be the only one: a page that is not
+        // painting gets no frames at all, and the content would stay at
+        // opacity 0 for as long as that lasted. Tapping a link and switching
+        // apps is enough to cause it on a phone, and you would come back to
+        // a blank page. So whichever of the two fires first finishes the
+        // job, and finish() is written to be safe to call twice.
+        var done = false;
+        function finish() {
+          if (done) return;
+          done = true;
           // Aim again now the new content has been laid out. The first shot
           // is taken while the document is still the length of the old page,
           // so the browser clamps it and the work lands low. Correcting here
           // is invisible: nothing has been faded back in yet.
-          if (!main.classList.contains("nudge")) settle();
-          requestAnimationFrame(function () {
-            document.body.classList.remove("swapping");
-            busy = false;
-          });
-        });
+          settle();
+          document.body.classList.remove("swapping");
+          announce();
+          busy = false;
+          if (queued) {
+            var next = queued; queued = null;
+            if (next !== location.pathname + location.search) swap(next, true);
+          }
+        }
+        requestAnimationFrame(function () { requestAnimationFrame(finish); });
+        setTimeout(finish, 120);
       }).catch(function () {
+        clearTimeout(giveUp);
+        queued = null;
+        document.body.classList.remove("swapping");   // never leave it invisible
         location.href = url;                     // anything at all: do it properly
       });
     }
 
     addEventListener("click", function (ev) {
-      if (wide.matches || busy) return;
+      if (wide.matches) return;
       if (ev.defaultPrevented || ev.button !== 0) return;
       if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
       if (!ev.target.closest) return;
@@ -361,7 +419,20 @@
       if (!/\/$|\/index\.html$/.test(url.pathname)) return;   // only our pages
 
       ev.preventDefault();
+      // Tapped while a swap is still in flight. Returning here without
+      // preventDefault let the browser follow the link instead, so an
+      // impatient second tap reloaded the whole page and threw away the
+      // swap that was already running. Hold the request and honour it when
+      // the current one lands; the last tap wins, which is what the person
+      // tapping meant.
+      if (busy) { queued = url.pathname + url.search; return; }
       swap(url.pathname + url.search, true);
+    });
+
+    // Last line of defence. If the page was left mid-swap while it was not
+    // painting, returning to it must not show a blank screen.
+    addEventListener("visibilitychange", function () {
+      if (!document.hidden && !busy) document.body.classList.remove("swapping");
     });
 
     // Back and forward move between swapped pages the same way.
