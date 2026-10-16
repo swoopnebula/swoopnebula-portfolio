@@ -313,8 +313,13 @@
         document.title = doc.title;
         if (push) history.pushState({ soft: 1 }, "", clean(url));
         markCurrent(url);
-        bindContent(main);
+        // Move first, then bind. The reveal observer judges what is on
+        // screen the moment it starts watching, so binding while the page
+        // is still at the old scroll position tells it the new title is far
+        // below the fold and it stays hidden. You then land on what looks
+        // like blank space and the title fades in afterwards, a beat late.
         settle();
+        bindContent(main);
 
         // Paint the new content in place before fading it up, or the first
         // frame shows it at the old scroll position.
