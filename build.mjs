@@ -206,12 +206,19 @@ const hash = async (f) =>
   createHash("md5").update(await readFile(f)).digest("hex").slice(0, 8);
 const vc = await hash(path.join(ROOT, "assets/site.css"));
 const vj = await hash(path.join(ROOT, "assets/site.js"));
+// Browsers cache a favicon per page and hold onto it hard, including the
+// 404 from before there was one. A version on the URL is the only reliable
+// way to make an already-visited page pick up a new icon.
+const vi = await hash(path.join(ROOT, "favicon.ico"));
 for (const rel of [...ORDER.map((s) => s + "/index.html"), "index.html", "404.html"]) {
   const f = path.join(ROOT, rel);
   if (!existsSync(f)) continue;
   let h = await readFile(f, "utf8");
   h = h.replace(/(assets\/site\.css)(\?v=[0-9a-z]+)?/g, "$1?v=" + vc)
-       .replace(/(assets\/site\.js)(\?v=[0-9a-z]+)?/g,  "$1?v=" + vj);
+       .replace(/(assets\/site\.js)(\?v=[0-9a-z]+)?/g,  "$1?v=" + vj)
+       .replace(/(favicon\.ico)(\?v=[0-9a-z]+)?/g,        "$1?v=" + vi)
+       .replace(/(assets\/favicon-32\.png)(\?v=[0-9a-z]+)?/g,     "$1?v=" + vi)
+       .replace(/(assets\/apple-touch-icon\.png)(\?v=[0-9a-z]+)?/g, "$1?v=" + vi);
   await writeFile(f, h);
 }
 const today = new Date().toISOString().slice(0, 10);
