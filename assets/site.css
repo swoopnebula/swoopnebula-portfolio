@@ -360,3 +360,24 @@ img.lazy.ready { opacity: 1; }
 /* The #work anchor, used on phones so a tapped link opens already scrolled
    to the content. scroll-margin keeps the heading off the very top edge. */
 #work { scroll-margin-top: 14px; }
+
+/* ---- soft navigation on a phone ------------------------------------------
+   Only <main> is exchanged, so only <main> fades. The masthead, the portrait
+   and the list stay put, which is the whole point: the furniture never
+   flickers because it never leaves. */
+main { transition: opacity 220ms var(--ease); }
+body.swapping main { opacity: 0; }
+
+/* When the work is already under the top edge there is nothing to scroll,
+   and a tap with no movement feels ignored. A small nod answers it. */
+@keyframes sn-nudge {
+  0%   { transform: translateY(0); }
+  38%  { transform: translateY(8px); }
+  100% { transform: translateY(0); }
+}
+main.nudge { animation: sn-nudge 440ms var(--ease); }
+
+@media (prefers-reduced-motion: reduce) {
+  main { transition: none; }
+  main.nudge { animation: none; }
+}

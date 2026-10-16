@@ -183,44 +183,182 @@
     }, { passive: false });
   })();
 
-  /* ---- reveal on enter --------------------------------------------------- */
-  var risers = [].slice.call(document.querySelectorAll(".rise"));
-  if (!reduced && "IntersectionObserver" in window && risers.length) {
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (!en.isIntersecting) return;
-        en.target.classList.add("in");
-        io.unobserve(en.target);
+  /* ---- hooks that have to survive a swap ---------------------------------
+     These used to run once over the whole document. The soft navigation
+     below replaces the contents of <main>, so they are a function now and
+     run again over whatever just arrived. */
+  function bindContent(root) {
+    root = root || document;
+
+    /* reveal on enter */
+    var risers = [].slice.call(root.querySelectorAll(".rise"));
+    if (!reduced && "IntersectionObserver" in window && risers.length) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (!en.isIntersecting) return;
+          en.target.classList.add("in");
+          io.unobserve(en.target);
+        });
+      }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+      risers.forEach(function (el, i) {
+        // A short stagger reads as one movement rather than a dozen.
+        el.style.transitionDelay = Math.min(i % 6, 5) * 45 + "ms";
+        io.observe(el);
       });
-    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
-    risers.forEach(function (el, i) {
-      // A short stagger reads as one movement rather than a dozen.
-      el.style.transitionDelay = Math.min(i % 6, 5) * 45 + "ms";
-      io.observe(el);
+    } else {
+      risers.forEach(function (el) { el.classList.add("in"); });
+    }
+
+    /* images fade in once decoded */
+    [].forEach.call(root.querySelectorAll("img.lazy"), function (img) {
+      if (img.complete) { img.classList.add("ready"); return; }
+      img.addEventListener("load", function () { img.classList.add("ready"); });
+      img.addEventListener("error", function () { img.classList.add("ready"); });
     });
-  } else {
-    risers.forEach(function (el) { el.classList.add("in"); });
+
+    /* video plays only while visible. Six autoplaying loops would otherwise
+       decode the whole time, which costs battery on a laptop and data on a
+       phone. */
+    var vids = [].slice.call(root.querySelectorAll("video[data-inview]"));
+    if (vids.length && "IntersectionObserver" in window) {
+      var vo = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          var v = en.target;
+          if (en.isIntersecting) { v.play().catch(function () {}); }
+          else if (!v.paused) { v.pause(); }
+        });
+      }, { threshold: 0.15 });
+      vids.forEach(function (v) { vo.observe(v); });
+    }
   }
 
-  /* ---- images fade in once decoded -------------------------------------- */
-  [].forEach.call(document.querySelectorAll("img.lazy"), function (img) {
-    if (img.complete) { img.classList.add("ready"); return; }
-    img.addEventListener("load", function () { img.classList.add("ready"); });
-    img.addEventListener("error", function () { img.classList.add("ready"); });
-  });
+  bindContent(document);
 
-  /* ---- video plays only while visible ------------------------------------
-     Six autoplaying loops would otherwise decode the whole time, which costs
-     battery on a laptop and data on a phone. */
-  var vids = [].slice.call(document.querySelectorAll("video[data-inview]"));
-  if (vids.length && "IntersectionObserver" in window) {
-    var vo = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        var v = en.target;
-        if (en.isIntersecting) { v.play().catch(function () {}); }
-        else if (!v.paused) { v.pause(); }
+  /* ---- soft navigation on a phone ----------------------------------------
+     On a phone the list sits above the work on every page, so an ordinary
+     link reloads the whole document only to rebuild the same masthead, the
+     same portrait and the same list, then drops you at the top of it again.
+     Instead the new page is fetched, only <main> is exchanged, and the view
+     moves to the work: the furniture never flickers because it never leaves.
+     A failure of any kind falls back to a normal navigation, so the links
+     keep working with no JavaScript, on an old browser, or offline. */
+  (function softNav() {
+    var main = document.querySelector("main");
+    if (!main || !window.fetch || !window.DOMParser || !history.pushState) return;
+    if (location.protocol === "file:") return;   // fetch cannot read the disk
+    var busy = false;
+
+    /* The rail and the masthead are never swapped, so their links keep
+       resolving against whatever the address bar says. Once a swap changes
+       that, "adobe/" would mean "/bna-social-media-design/adobe/" and the
+       second tap would 404. Pinning them to the URLs they mean right now,
+       while the address bar is still the page they were written for, costs
+       one pass and removes the whole class of bug. Reading .href gives the
+       resolved absolute URL, so this works from any subfolder. */
+    [].forEach.call(
+      document.querySelectorAll(".rail a[href], .mast .brand[href]"),
+      function (a) { a.setAttribute("href", a.href); }
+    );
+
+    function clean(href) { return href.replace(/#work$/, ""); }
+
+    function workTop() {
+      var w = document.getElementById("work");
+      return w ? Math.round(w.getBoundingClientRect().top + pageYOffset - 14) : 0;
+    }
+
+    /* Put the work under the top edge. When it is already there, nothing
+       would move and the tap would feel ignored, so the content gives a
+       small nod instead: enough to say "this is the new thing". */
+    function settle() {
+      var y = workTop();
+      if (Math.abs(y - pageYOffset) < 8 || y < 40) {
+        main.classList.remove("nudge");
+        void main.offsetWidth;                   // restart the animation
+        main.classList.add("nudge");
+        return;
+      }
+      scrollTo(0, Math.max(0, y));
+    }
+
+    function markCurrent(url) {
+      var path = new URL(url, location.href).pathname;
+      [].forEach.call(document.querySelectorAll(".railnav a"), function (a) {
+        if (new URL(a.href, location.href).pathname === path) {
+          a.setAttribute("aria-current", "page");
+        } else {
+          a.removeAttribute("aria-current");
+        }
       });
-    }, { threshold: 0.15 });
-    vids.forEach(function (v) { vo.observe(v); });
-  }
+    }
+
+    function swap(url, push) {
+      if (busy) return;
+      busy = true;
+      document.body.classList.add("swapping");
+
+      // The fade and the fetch run together, so the wait is spent rather
+      // than added. 220ms matches the CSS, and the whole thing waits for
+      // whichever finishes last.
+      var got = fetch(url, { credentials: "same-origin" })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); });
+      var faded = new Promise(function (go) { setTimeout(go, 220); });
+
+      Promise.all([got, faded]).then(function (out) {
+        var doc = new DOMParser().parseFromString(out[0], "text/html");
+        var fresh = doc.querySelector("main");
+        if (!fresh) throw new Error("no main");
+
+        main.innerHTML = fresh.innerHTML;
+        document.title = doc.title;
+        if (push) history.pushState({ soft: 1 }, "", clean(url));
+        markCurrent(url);
+        bindContent(main);
+        settle();
+
+        // Paint the new content in place before fading it up, or the first
+        // frame shows it at the old scroll position.
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            document.body.classList.remove("swapping");
+            busy = false;
+          });
+        });
+      }).catch(function () {
+        location.href = url;                     // anything at all: do it properly
+      });
+    }
+
+    addEventListener("click", function (ev) {
+      if (wide.matches || busy) return;
+      if (ev.defaultPrevented || ev.button !== 0) return;
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      if (!ev.target.closest) return;
+      var a = ev.target.closest("a[href]");
+      if (!a || a.target === "_blank" || a.hasAttribute("download")) return;
+
+      var url;
+      try { url = new URL(a.href, location.href); } catch (e) { return; }
+      if (url.origin !== location.origin) return;             // off site
+      // Already here: the portrait and All work both point at the page you
+      // are on. Reloading it would flash the whole screen to show the same
+      // thing, so move to the work instead, or nod if it is already there.
+      if (url.pathname === location.pathname) {
+        ev.preventDefault();
+        settle();
+        return;
+      }
+      if (!/\/$|\/index\.html$/.test(url.pathname)) return;   // only our pages
+
+      ev.preventDefault();
+      swap(url.pathname + url.search, true);
+    });
+
+    // Back and forward move between swapped pages the same way.
+    addEventListener("popstate", function () {
+      if (wide.matches) { location.reload(); return; }
+      swap(location.pathname + location.search, false);
+    });
+  })();
+
 })();
