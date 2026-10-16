@@ -301,7 +301,14 @@
         setTimeout(function () { main.classList.remove("nudge"); }, 500);
         return;
       }
-      scrollTo(0, Math.max(0, y));
+      y = Math.max(0, y);
+      // Where the weighted scroller is running it already eases the painted
+      // position, so the move looks gradual and asking the browser to animate
+      // as well would fight it. Touch has no scroller, so the same call lands
+      // as an instant jump and the eye is left behind. There, ask for the
+      // animation. Anyone who has asked for less motion gets neither.
+      if (smooth || reduced) scrollTo(0, y);
+      else scrollTo({ top: y, behavior: "smooth" });
     }
 
     /* A real page load moves focus to the top of the new document and tells a
