@@ -198,9 +198,10 @@ body.rail-pinned .rail::-webkit-scrollbar { width: 0; height: 0; }
   align-items: start;
 }
 /* Three across is the most it ever shows: past that the work gets small
-   before the window runs out. Then two, then one. */
+   before the window runs out. Then two, and two all the way down: a single
+   column of twelve turns the contact sheet into a scroll, and the point of a
+   contact sheet is seeing the work beside itself. */
 @media (max-width: 1240px) { .collage { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 680px)  { .collage { grid-template-columns: 1fr; } }
 .collage a {
   display: block; position: relative;
   /* The live site scales the whole card, caption and all, over half a
