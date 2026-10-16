@@ -386,11 +386,8 @@
         void main.offsetHeight;
         document.title = doc.title;
         markCurrent(url);
-        // No scrolling here. The page was already put in position the moment
-        // the link was tapped; the content underneath has changed, but the
-        // title has not moved, so there is nothing left to correct.
-        bindContent(main);
-        announce();
+        // Binding the reveal and moving focus both wait for finish(), so they
+        // happen in step with the fade rather than ahead of it.
 
         // Paint the new content in place before fading it up, or the first
         // frame shows it at the old scroll position. Two frames is the
@@ -404,11 +401,16 @@
         function finish() {
           if (done) return;
           done = true;
-          // Aim again now the new content has been laid out. The first shot
-          // is taken while the document is still the length of the old page,
-          // so the browser clamps it and the work lands low. Correcting here
-          // is invisible: nothing has been faded back in yet.
+          // Three beats, kept apart on purpose. One movement that does two
+          // things at once reads as a glitch; separated, each one is legible.
+          //   1. the new work appears, in place, where you are already looking
+          //   2. a moment later the view travels to the title
+          // Nothing moved when the link was tapped, and nothing moves while
+          // the content is arriving.
           document.body.classList.remove("swapping");
+          bindContent(main);
+          announce();
+          setTimeout(settle, 220);
           busy = false;
           if (queued) {
             var next = queued; queued = null;
@@ -447,14 +449,6 @@
       if (!/\/$|\/index\.html$/.test(url.pathname)) return;   // only our pages
 
       ev.preventDefault();
-      // Go to the title now, before anything is fetched. Every page carries
-      // the same masthead, portrait, name, button and list above the work,
-      // so the title sits at the same place in the document on all of them.
-      // The target is therefore a constant, measurable from the page already
-      // on screen, whose layout settled long ago. Scrolling here means the
-      // move happens once, immediately, against known geometry, and the
-      // content that arrives later slots in underneath without shifting it.
-      settle();
       // Tapped while a swap is still in flight. Returning here without
       // preventDefault let the browser follow the link instead, so an
       // impatient second tap reloaded the whole page and threw away the
