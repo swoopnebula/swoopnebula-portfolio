@@ -86,49 +86,40 @@
   /* ---- arriving from inside the site, on a phone -------------------------
      The rail sits above the work at phone widths, so following a link lands
      you back on the same list you just used and the work starts a screenful
-     down. When the navigation came from a link on this site, start the new
-     page at its content instead. A fresh visit, a bookmark or the back button
-     sets no flag and is left alone, so the masthead and the name are still the
-     first thing a new arrival sees.
-     Only on a phone: on a wider screen the rail is a sidebar and the work is
-     already at the top. */
-  function onPhone() { return !wide.matches; }
+     down. Point those links at #work and the browser opens the page already
+     scrolled, before the first paint.
+     An earlier version scrolled after load instead, which showed the top of
+     the page and then jumped: the flash was the whole problem. Letting the
+     browser do it costs nothing and is never late, because every image
+     carries width and height so the layout is final at parse time.
+     Only on a phone: wider, the rail is a sidebar and the work already
+     starts at the top. The hash is added at click time, so what is linked,
+     shared and indexed stays the clean URL. */
+  (function jumpToWork() {
+    if (!view) return;
+    addEventListener("click", function (ev) {
+      if (wide.matches || !ev.target.closest) return;
+      var a = ev.target.closest("a[href]");
+      if (!a) return;
+      var h = a.getAttribute("href");
+      // Internal pages only, and never one that already carries a hash.
+      if (!h || h.indexOf("#") > -1) return;
+      if (/^(https?:|mailto:|tel:|\/\/)/i.test(h)) return;
+      a.setAttribute("href", h + "#work");
+    }, true);
 
-  addEventListener("click", function (ev) {
-    if (!onPhone() || !ev.target.closest) return;
-    var a = ev.target.closest("a[href]");
-    if (!a) return;
-    var h = a.getAttribute("href");
-    // Internal pages only. Off-site links, mail and same-page anchors are not
-    // navigations within this site and must not set the flag.
-    if (!h || /^(https?:|mailto:|tel:|#|\/\/)/i.test(h)) return;
-    try { sessionStorage.setItem("sn-from-link", "1"); } catch (e) {}
-  }, true);
-
-  (function jumpToContent() {
-    var flagged = false;
-    try {
-      flagged = sessionStorage.getItem("sn-from-link") === "1";
-      if (flagged) sessionStorage.removeItem("sn-from-link");
-    } catch (e) { return; }                  // private mode: do nothing
-    if (!flagged || !onPhone() || location.hash) return;
-
-    var content = document.querySelector("main .work, main .collage");
-    if (!content) return;
-    // The page keeps growing while images decode, so a single measurement
-    // lands short: the heading is pushed below where it was when we looked.
-    // Re-aim until the target stops moving, then stop. Give up after a second
-    // so a slow image cannot yank the page under someone already reading.
-    var settled = 0, until = Date.now() + 1000, last = -1;
-    function go() {
-      var y = Math.round(content.getBoundingClientRect().top + pageYOffset - 14);
-      if (y > 40 && Math.abs(y - pageYOffset) > 2) scrollTo(0, y);
-      settled = y === last ? settled + 1 : 0;
-      last = y;
-      // Three identical readings, or out of time, means the layout is done.
-      if (settled < 3 && Date.now() < until) requestAnimationFrame(go);
+    // Safety net. While the weighted scroller is running the page sits in a
+    // transformed wrapper, so the target never leaves the viewport and the
+    // browser sees no reason to move: a #work link would quietly do nothing.
+    // That is the case for a shared link opened on a desktop. Place it once,
+    // before the first frame is painted, so there is still nothing to see.
+    if (smooth && location.hash === "#work") {
+      var target = document.getElementById("work");
+      if (target) {
+        var y = target.getBoundingClientRect().top + pageYOffset - 14;
+        if (y > 40) { scrollTo(0, y); current = y; place(y); }
+      }
     }
-    requestAnimationFrame(go);
   })();
 
   /* ---- opened straight off the disk --------------------------------------

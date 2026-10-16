@@ -106,7 +106,7 @@ await writeFile(path.join(ROOT, "index.html"), shell({
   title: "Swoop Nebula — Portfolio",
   desc: "Design work by Swoop Nebula: posters, merchandise, campaigns and social design.",
   slug: "",
-  main: `      <div class="collage">\n${tiles}\n      </div>`,
+  main: `      <div class="collage" id="work">\n${tiles}\n      </div>`,
 }));
 
 // projects -----------------------------------------------------------------
@@ -171,7 +171,7 @@ for (let i = 0; i < ORDER.length; i++) {
     title: `${p.title} — Swoop Nebula`,
     desc: p.paras[0] ? trim(p.paras[0], 155) : `${p.title}, design work by Swoop Nebula.`,
     slug,
-    main: `      <section class="work">
+    main: `      <section class="work" id="work">
         <h2 class="rise">${esc(p.title)}</h2>
       </section>
 ${body}
@@ -189,7 +189,7 @@ await writeFile(path.join(ROOT, "404.html"), shell({
   desc: "That page moved. The portfolio was rebuilt and a few addresses changed.",
   abs: true,
   noindex: true,
-  main: `      <section class="work">
+  main: `      <section class="work" id="work">
         <h2 class="rise">That page moved.</h2>
         <div class="copy rise">
           <p>The portfolio was rebuilt and a few addresses changed. Everything is

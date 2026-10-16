@@ -356,3 +356,7 @@ img.lazy.ready { opacity: 1; }
   .collage a:hover { transform: none; }
   .collage .cap { opacity: .82; }
   }
+
+/* The #work anchor, used on phones so a tapped link opens already scrolled
+   to the content. scroll-margin keeps the heading off the very top edge. */
+#work { scroll-margin-top: 14px; }
