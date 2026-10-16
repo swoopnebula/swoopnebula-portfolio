@@ -83,6 +83,54 @@
     kick();
   }
 
+  /* ---- arriving from inside the site, on a phone -------------------------
+     The rail sits above the work at phone widths, so following a link lands
+     you back on the same list you just used and the work starts a screenful
+     down. When the navigation came from a link on this site, start the new
+     page at its content instead. A fresh visit, a bookmark or the back button
+     sets no flag and is left alone, so the masthead and the name are still the
+     first thing a new arrival sees.
+     Only on a phone: on a wider screen the rail is a sidebar and the work is
+     already at the top. */
+  function onPhone() { return !wide.matches; }
+
+  addEventListener("click", function (ev) {
+    if (!onPhone() || !ev.target.closest) return;
+    var a = ev.target.closest("a[href]");
+    if (!a) return;
+    var h = a.getAttribute("href");
+    // Internal pages only. Off-site links, mail and same-page anchors are not
+    // navigations within this site and must not set the flag.
+    if (!h || /^(https?:|mailto:|tel:|#|\/\/)/i.test(h)) return;
+    try { sessionStorage.setItem("sn-from-link", "1"); } catch (e) {}
+  }, true);
+
+  (function jumpToContent() {
+    var flagged = false;
+    try {
+      flagged = sessionStorage.getItem("sn-from-link") === "1";
+      if (flagged) sessionStorage.removeItem("sn-from-link");
+    } catch (e) { return; }                  // private mode: do nothing
+    if (!flagged || !onPhone() || location.hash) return;
+
+    var content = document.querySelector("main .work, main .collage");
+    if (!content) return;
+    // The page keeps growing while images decode, so a single measurement
+    // lands short: the heading is pushed below where it was when we looked.
+    // Re-aim until the target stops moving, then stop. Give up after a second
+    // so a slow image cannot yank the page under someone already reading.
+    var settled = 0, until = Date.now() + 1000, last = -1;
+    function go() {
+      var y = Math.round(content.getBoundingClientRect().top + pageYOffset - 14);
+      if (y > 40 && Math.abs(y - pageYOffset) > 2) scrollTo(0, y);
+      settled = y === last ? settled + 1 : 0;
+      last = y;
+      // Three identical readings, or out of time, means the layout is done.
+      if (settled < 3 && Date.now() < until) requestAnimationFrame(go);
+    }
+    requestAnimationFrame(go);
+  })();
+
   /* ---- opened straight off the disk --------------------------------------
      Links point at folders, "sharing-excess/", which a web server resolves to
      the index.html inside. A file:// URL has no such rule, so macOS hands the
