@@ -386,6 +386,9 @@ main.nudge { animation: sn-nudge 440ms var(--ease); }
 }
 
 /* The swapped-in heading takes focus so the keyboard and screen reader carry
-   on from the content. It is not a tab stop, so it should not show a ring. */
-#work h2[tabindex="-1"]:focus { outline: none; }
-#work h2[tabindex="-1"]:focus-visible { outline: 2px solid var(--blue); outline-offset: 6px; }
+   on from the content. It is a heading, not a control, and nobody tabbed to
+   it, so it must never draw a focus ring. Both states are suppressed: Safari
+   paints one on a programmatic focus even when :focus-visible does not match,
+   which put a blue box around the title on a phone. */
+#work h2[tabindex="-1"]:focus,
+#work h2[tabindex="-1"]:focus-visible { outline: none; box-shadow: none; }

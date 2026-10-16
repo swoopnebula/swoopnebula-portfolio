@@ -313,6 +313,26 @@
       }
     }
 
+    /* One shot at the position is not enough on a real device. The safety
+       timeout that un-fades the page can fire before the phone has finished
+       laying the new content out, and the work then lands short, with the
+       list still showing above it. Keep correcting for a moment, and stop
+       the instant the reader scrolls themselves: nothing is worse than a
+       page that fights your thumb. */
+    function keepAiming() {
+      var mine = Math.round(pageYOffset), tries = 0;
+      (function again() {
+        if (++tries > 12) return;                       // about 700ms
+        if (Math.abs(Math.round(pageYOffset) - mine) > 4) return;  // they moved it
+        var y = workTop();
+        if (y > 40 && Math.abs(y - pageYOffset) > 2) {
+          scrollTo(0, y);
+          mine = Math.round(pageYOffset);
+        }
+        setTimeout(again, 60);
+      })();
+    }
+
     function markCurrent(url) {
       var path = new URL(url, location.href).pathname;
       [].forEach.call(document.querySelectorAll(".railnav a"), function (a) {
@@ -381,6 +401,7 @@
           settle();
           document.body.classList.remove("swapping");
           announce();
+          keepAiming();
           busy = false;
           if (queued) {
             var next = queued; queued = null;
